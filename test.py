@@ -14,14 +14,16 @@ load_dotenv()
 os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Set path to your PDF file
-PDF_PATH = "path to your pdf here"
+# Set paths to your PDF files
+PDF_PATHS = os.getenv("PDF_FILE").split(",")  # Convert the comma-separated string to a list
 
-def get_pdf_text(pdf_path):
+# 
+def get_pdf_text(pdf_paths):
     text = ""
-    pdf_reader = PdfReader(pdf_path)
-    for page in pdf_reader.pages:
-        text += page.extract_text()
+    for pdf_path in pdf_paths:
+        pdf_reader = PdfReader(pdf_path.strip())  # Strip to remove accidental spaces
+        for page in pdf_reader.pages:
+            text += page.extract_text()
     return text
 
 def get_text_chunks(text):
@@ -54,7 +56,7 @@ def get_conversational_chain():
 def user_input(user_question):
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
-    new_db = FAISS.load_local("faiss_index", embeddings)
+    new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization = True)
     docs = new_db.similarity_search(user_question)
 
     chain = get_conversational_chain()
@@ -77,7 +79,7 @@ st.subheader("Hello! There, How can I help you Today- 👩‍💻")
 st.caption(":violet[what a] :orange[good day] :violet[it is] :violet[today] :blue[ᓚᘏᗢ]")
 
 # Process the PDF file automatically
-pdf_text = get_pdf_text(PDF_PATH)
+pdf_text = get_pdf_text(PDF_PATHS)  # Now it processes all PDFs in the list
 text_chunks = get_text_chunks(pdf_text)
 get_vector_store(text_chunks)
 
